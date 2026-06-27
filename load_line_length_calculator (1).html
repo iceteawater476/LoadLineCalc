@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load Line Length Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
+        }
+        input[type="number"] { -moz-appearance: textfield; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 flex items-center justify-center">
+
+    <main class="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
+        <!-- Header -->
+        <header class="bg-blue-900 text-white p-6 md:p-8">
+            <h1 class="text-2xl md:text-3xl font-bold mb-2">Load Line Length (L<sub>LL</sub>) Calculator</h1>
+            <p class="text-blue-200 text-sm md:text-base">Measurement guide based on ICLL standards (including Concave Stem rules).</p>
+        </header>
+
+        <!-- Visual Diagram Section -->
+        <section class="bg-slate-50 border-b border-slate-200 p-6 md:p-8 flex flex-col items-center">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 w-full text-left">Measurement Guide (Flat Keel)</h2>
+            <div class="w-full max-w-4xl bg-white border border-slate-200 rounded-lg shadow-sm p-2 overflow-hidden flex justify-center">
+                <img src="https://images2.imgbox.com/72/d0/AHNNiXll_o.png" alt="Determining Load Line Length - Flat keel" class="max-w-full h-auto rounded">
+            </div>
+            <p class="mt-4 text-sm text-slate-600 border-l-4 border-blue-500 pl-3 w-full text-left">
+                <strong>Reference Diagram:</strong> This image illustrates the standard Load Line Length calculation. It highlights the 85% moulded depth waterline (d<sub>1</sub>), the Total Length at d<sub>1</sub>, and the Length to the Centerline (CL) Rudder Stock. The final Load Line Length is the greater of 96% of the Total Length or the Length to the Rudder Stock.
+            </p>
+        </section>
+
+        <!-- Calculator Inputs -->
+        <div class="p-6 md:p-8 grid md:grid-cols-2 gap-8">
+            <section class="space-y-6">
+                <!-- Rudder Stock Question -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Does the ship have a rudder stock?</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="rudderStock" value="yes" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                            <span class="text-slate-700">Yes</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="rudderStock" value="no" class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                            <span class="text-slate-700">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Input 1 -->
+                <div>
+                    <label for="totalLength" class="block text-sm font-semibold text-slate-700 mb-1">
+                        Total waterline length (Terminal to Terminal)
+                    </label>
+                    <p class="text-xs text-slate-500 mb-2">Total length on the 85% waterline. If the stem is concave, use the vertical projection terminal.</p>
+                    <div class="relative">
+                        <input type="number" id="totalLength" placeholder="e.g., 120" class="w-full pl-4 pr-12 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none">
+                        <span class="absolute right-4 top-3 text-slate-400 font-medium">m</span>
+                    </div>
+                </div>
+
+                <!-- Input 2 -->
+                <div id="rudderInputGroup" class="transition-all duration-300">
+                    <label for="rudderLength" class="block text-sm font-semibold text-slate-700 mb-1">
+                        Length from stem terminal to rudder stock
+                    </label>
+                    <p class="text-xs text-slate-500 mb-2">Distance from the forward terminal to the axis of the rudder stock.</p>
+                    <div class="relative">
+                        <input type="number" id="rudderLength" placeholder="e.g., 118" class="w-full pl-4 pr-12 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none">
+                        <span class="absolute right-4 top-3 text-slate-400 font-medium">m</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results -->
+            <section class="bg-blue-50 rounded-xl p-6 border border-blue-100 flex flex-col justify-center relative">
+                <div id="emptyState" class="text-center absolute inset-0 flex flex-col items-center justify-center p-6 bg-blue-50 rounded-xl z-10 transition-opacity duration-300">
+                    <svg class="w-12 h-12 text-blue-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    <p class="text-slate-500 text-sm">Enter measurements on the left to determine the Load Line Length.</p>
+                </div>
+
+                <div id="resultsState" class="opacity-0 transition-opacity duration-300 flex flex-col h-full justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-blue-800 uppercase tracking-wider mb-4">Calculation Breakdown</h3>
+                        
+                        <div class="space-y-4 text-sm text-slate-700">
+                            <div class="flex justify-between items-center bg-white p-3 rounded shadow-sm border-l-4 border-slate-600">
+                                <span>96% of Waterline Length:</span>
+                                <span id="calc96" class="font-mono font-bold text-slate-900">0.00</span>
+                            </div>
+                            <div id="rudderCalcRow" class="flex justify-between items-center bg-white p-3 rounded shadow-sm border-l-4 border-blue-500">
+                                <span>Stem Terminal to Rudder Stock:</span>
+                                <span id="calcRudder" class="font-mono font-bold text-slate-900">0.00</span>
+                            </div>
+                            
+                            <p id="logicText" class="text-xs text-blue-600 mt-2 italic">
+                                The official length is the greater of the two values.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-blue-200">
+                        <p class="text-sm text-blue-800 font-semibold mb-1">Final Load Line Length (L<sub>LL</sub>)</p>
+                        <div class="flex items-baseline gap-2">
+                            <span id="finalResult" class="text-4xl font-bold text-blue-900 font-mono">0.00</span>
+                            <span class="text-blue-700 font-medium">m</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const totalLengthInput = document.getElementById('totalLength');
+        const rudderLengthInput = document.getElementById('rudderLength');
+        const rudderStockRadios = document.getElementsByName('rudderStock');
+        const rudderInputGroup = document.getElementById('rudderInputGroup');
+        const emptyState = document.getElementById('emptyState');
+        const resultsState = document.getElementById('resultsState');
+        const calc96Display = document.getElementById('calc96');
+        const calcRudderDisplay = document.getElementById('calcRudder');
+        const rudderCalcRow = document.getElementById('rudderCalcRow');
+        const finalResultDisplay = document.getElementById('finalResult');
+        const logicText = document.getElementById('logicText');
+
+        let hasRudderStock = true;
+
+        totalLengthInput.addEventListener('input', calculate);
+        rudderLengthInput.addEventListener('input', calculate);
+        
+        rudderStockRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                hasRudderStock = e.target.value === 'yes';
+                
+                if(hasRudderStock) {
+                    rudderInputGroup.style.opacity = '1';
+                    rudderInputGroup.style.pointerEvents = 'auto';
+                    rudderCalcRow.style.display = 'flex';
+                    logicText.innerText = "The official length is the greater of the two values.";
+                } else {
+                    rudderInputGroup.style.opacity = '0.4';
+                    rudderInputGroup.style.pointerEvents = 'none';
+                    rudderLengthInput.value = ''; 
+                    rudderCalcRow.style.display = 'none';
+                    logicText.innerText = "Result is exactly 96% of the waterline length (no rudder stock).";
+                }
+                calculate();
+            });
+        });
+
+        function calculate() {
+            const totalLen = parseFloat(totalLengthInput.value);
+            const rudderLen = parseFloat(rudderLengthInput.value);
+
+            if (isNaN(totalLen) || (hasRudderStock && isNaN(rudderLen))) {
+                emptyState.style.opacity = '1';
+                emptyState.style.zIndex = '10';
+                resultsState.style.opacity = '0';
+                return;
+            }
+
+            emptyState.style.opacity = '0';
+            setTimeout(() => { emptyState.style.zIndex = '-1'; }, 300);
+            resultsState.style.opacity = '1';
+
+            const length96 = totalLen * 0.96;
+            calc96Display.innerText = length96.toFixed(3);
+            let finalLll = 0;
+
+            if (hasRudderStock) {
+                calcRudderDisplay.innerText = rudderLen.toFixed(3);
+                
+                if (length96 > rudderLen) {
+                    calc96Display.parentElement.classList.add('bg-blue-100');
+                    calcRudderDisplay.parentElement.classList.remove('bg-blue-100');
+                    finalLll = length96;
+                } else {
+                    calcRudderDisplay.parentElement.classList.add('bg-blue-100');
+                    calc96Display.parentElement.classList.remove('bg-blue-100');
+                    finalLll = rudderLen;
+                }
+            } else {
+                calc96Display.parentElement.classList.add('bg-blue-100');
+                finalLll = length96;
+            }
+
+            finalResultDisplay.innerText = finalLll.toFixed(3);
+        }
+    </script>
+</body>
+</html>
