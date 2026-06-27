@@ -115,6 +115,71 @@
                 </div>
             </section>
         </div>
+
+        <!-- Superstructure Height Section -->
+        <div class="border-t border-slate-200">
+            <header class="bg-indigo-900 text-white p-6 md:px-8 md:py-6">
+                <h2 class="text-xl md:text-2xl font-bold mb-1">Superstructure Standard Height (h<sub>s</sub>)</h2>
+                <p class="text-indigo-200 text-sm">Calculates the standard height based on Table 5.</p>
+            </header>
+            
+            <div class="p-6 md:p-8 grid md:grid-cols-2 gap-8 bg-slate-50">
+                <section class="space-y-6">
+                    <!-- Type of Superstructure -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Superstructure Type</label>
+                        <div class="flex flex-col gap-3">
+                            <label class="flex items-center gap-3 cursor-pointer p-3 border border-slate-200 rounded-lg hover:bg-white transition-colors bg-white shadow-sm">
+                                <input type="radio" name="ssType" value="other" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-slate-700 font-medium">All other superstructures</span>
+                            </label>
+                            <label class="flex items-center gap-3 cursor-pointer p-3 border border-slate-200 rounded-lg hover:bg-white transition-colors bg-white shadow-sm">
+                                <input type="radio" name="ssType" value="raised" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-slate-700 font-medium">Raised quarter deck</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- LLL Input -->
+                    <div>
+                        <label for="ssLll" class="block text-sm font-semibold text-slate-700 mb-1">
+                            Load Line Length (L<sub>LL</sub>)
+                        </label>
+                        <p class="text-xs text-slate-500 mb-2">Auto-filled from the calculator above, or enter manually.</p>
+                        <div class="relative">
+                            <input type="number" id="ssLll" placeholder="e.g., 100" class="w-full pl-4 pr-12 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none shadow-sm">
+                            <span class="absolute right-4 top-3 text-slate-400 font-medium">m</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Superstructure Results -->
+                <section class="bg-indigo-50 rounded-xl p-6 border border-indigo-100 flex flex-col justify-center relative shadow-inner">
+                    <div id="ssEmptyState" class="text-center absolute inset-0 flex flex-col items-center justify-center p-6 bg-indigo-50 rounded-xl z-10 transition-opacity duration-300">
+                        <svg class="w-12 h-12 text-indigo-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        <p class="text-slate-500 text-sm">Waiting for Load Line Length to calculate height.</p>
+                    </div>
+
+                    <div id="ssResultsState" class="opacity-0 transition-opacity duration-300 flex flex-col h-full justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-indigo-800 uppercase tracking-wider mb-4">Applied Formula</h3>
+                            <div class="bg-white p-4 rounded-lg shadow-sm border border-indigo-100">
+                                <p class="text-sm text-slate-600 mb-1">Based on Table 5 for <span id="ssTypeLabel" class="font-semibold text-indigo-700">All other superstructures</span>:</p>
+                                <p id="ssFormula" class="font-mono text-indigo-900 font-medium bg-slate-50 p-2 rounded text-center">h_s = 1.80</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-6 border-t border-indigo-200">
+                            <p class="text-sm text-indigo-800 font-semibold mb-1">Standard Height (h<sub>s</sub>)</p>
+                            <div class="flex items-baseline gap-2">
+                                <span id="ssFinalResult" class="text-4xl font-bold text-indigo-900 font-mono">0.00</span>
+                                <span class="text-indigo-700 font-medium">m</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
     </main>
 
     <script>
@@ -130,10 +195,29 @@
         const finalResultDisplay = document.getElementById('finalResult');
         const logicText = document.getElementById('logicText');
 
+        // Superstructure Elements
+        const ssTypeRadios = document.getElementsByName('ssType');
+        const ssLllInput = document.getElementById('ssLll');
+        const ssEmptyState = document.getElementById('ssEmptyState');
+        const ssResultsState = document.getElementById('ssResultsState');
+        const ssFormulaDisplay = document.getElementById('ssFormula');
+        const ssFinalResultDisplay = document.getElementById('ssFinalResult');
+        const ssTypeLabel = document.getElementById('ssTypeLabel');
+
         let hasRudderStock = true;
+        let ssType = 'other';
 
         totalLengthInput.addEventListener('input', calculate);
         rudderLengthInput.addEventListener('input', calculate);
+        ssLllInput.addEventListener('input', calculateSuperstructure);
+
+        ssTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                ssType = e.target.value;
+                ssTypeLabel.innerText = e.target.value === 'raised' ? 'Raised quarter deck' : 'All other superstructures';
+                calculateSuperstructure();
+            });
+        });
         
         rudderStockRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
@@ -192,6 +276,60 @@
             }
 
             finalResultDisplay.innerText = finalLll.toFixed(3);
+            
+            // Auto-sync Load Line Length to the Superstructure Calculator
+            ssLllInput.value = finalLll.toFixed(3);
+            calculateSuperstructure();
+        }
+
+        function calculateSuperstructure() {
+            const Lll = parseFloat(ssLllInput.value);
+            if (isNaN(Lll)) {
+                ssEmptyState.style.opacity = '1';
+                ssEmptyState.style.zIndex = '10';
+                ssResultsState.style.opacity = '0';
+                return;
+            }
+
+            ssEmptyState.style.opacity = '0';
+            setTimeout(() => { ssEmptyState.style.zIndex = '-1'; }, 300);
+            ssResultsState.style.opacity = '1';
+
+            let hs = 0;
+            let formulaStr = "";
+
+            if (ssType === 'raised') {
+                if (Lll <= 30) {
+                    hs = 0.90;
+                    formulaStr = "0.90";
+                } else if (Lll > 30 && Lll < 75) {
+                    hs = 0.9 + 0.00667 * (Lll - 30);
+                    formulaStr = `0.9 + 0.00667(${Lll.toFixed(2)} - 30)`;
+                } else if (Lll >= 75 && Lll < 125) {
+                    hs = 1.2 + 0.012 * (Lll - 75);
+                    formulaStr = `1.2 + 0.012(${Lll.toFixed(2)} - 75)`;
+                } else {
+                    hs = 1.80;
+                    formulaStr = "1.80";
+                }
+            } else {
+                if (Lll <= 30) {
+                    hs = 1.80;
+                    formulaStr = "1.80";
+                } else if (Lll > 30 && Lll < 75) {
+                    hs = 1.80;
+                    formulaStr = "1.80";
+                } else if (Lll >= 75 && Lll < 125) {
+                    hs = 1.8 + 0.01 * (Lll - 75);
+                    formulaStr = `1.8 + 0.01(${Lll.toFixed(2)} - 75)`;
+                } else {
+                    hs = 2.30;
+                    formulaStr = "2.30";
+                }
+            }
+
+            ssFormulaDisplay.innerText = `h_s = ${formulaStr}`;
+            ssFinalResultDisplay.innerText = hs.toFixed(3);
         }
     </script>
 </body>
